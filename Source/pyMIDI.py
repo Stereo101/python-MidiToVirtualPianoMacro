@@ -93,7 +93,6 @@ class MidiFile:
 	def checkStartSequence(self):
 		for i in range(len(self.startSequence)):
 			if(len(self.startSequence[i]) == self.startCounter[i]):
-				#print("Found start sequence",self.startSequence[i])
 				return True
 		return False
 	
@@ -193,9 +192,7 @@ class MidiFile:
 			
 			self.log(self.deltaTime/self.division,self.virtualPianoScale[key-23-13])
 			if(velocity > 0):
-				self.notes.append([(self.deltaTime/self.division),self.virtualPianoScale[key-23-12]])
-				#self.midiSong.write(str(self.deltaTime/self.division)+ " " + self.virtualPianoScale[key-23-12] +"\n")
-			#print(deltaT,channel,key,velocity)
+				self.notes.append([(self.deltaTime/self.division),self.virtualPianoScale[key-23-13]])
 		elif(not type >> 4 in [0x8,0x9,0xA,0xB,0xD,0xE]):
 			self.log("VoiceEvent",hex(type),hex(self.bytes[self.itr]),"DT",deltaT)
 			self.itr +=1
