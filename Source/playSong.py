@@ -10,6 +10,7 @@ stopPumping = False
 user32 = ctypes.WinDLL('user32', use_last_error=True)
 tstart = time.time()
 isPlaying = False
+
 	
 def OnKeyDown(event):
 	global isPlaying
@@ -131,20 +132,16 @@ def pressLetter(charIn):
 		ReleaseKey(kv)
 	return
 		
-	
-	
-def runMacro():
-	global isPlaying
+def processFile():
 	with open("song.txt","r") as macro_file:
 		lines = macro_file.read().split("\n")
 		tOffsetSet = False
 		tOffset = 0
-		tstart = time.time()
 		tempo = 60/float(lines[0].split(" ")[1])
+		
+		processedNotes = []
+		
 		for l in lines[1:]:
-			if(not isPlaying):
-				break
-			#print("PROCESSING","\"",l,"\"")
 			l = l.split(" ")
 			if(len(l) < 2):
 				#print("INVALID LINE")
@@ -152,18 +149,33 @@ def runMacro():
 			
 			waitToPress = float(l[0])
 			notes = l[1]
+			processedNotes.append([waitToPress,notes])
 			if(not tOffsetSet):
 				tOffset = waitToPress
 				print("Starting macro with offset t=",tOffset)
 				tOffsetSet = True
-			while((float(l[0]) - tOffset)*(tempo) > (time.time() - tstart)):
-				time.sleep(.0000000005)
-			print("%10s %10s" % (l[0],l[1]))
-			for n in notes:
-				#print("PRESSING",n, "with value",getKeyValue(n))
-				pressLetter(n)
+	return [tempo,tOffset,processedNotes]
 
-
+def floorToZero(i):
+	if(i > 0):
+		return i
+	else:
+		return 0
+	
+def runMacro():
+	global isPlaying
+	global infoTuple
+	tstart = time.time()
+	for l in infoTuple[2]:
+		if(not isPlaying):
+			break
+		goTime = (l[0] - infoTuple[1])*(infoTuple[0])
+		if(goTime - (time.time() - tstart) > 0):
+			time.sleep(floorToZero(goTime - (time.time() - tstart)))
+		print("%10.2f %15s" % (l[0],l[1]))
+		for n in l[1]:
+			pressLetter(n)
+infoTuple = processFile()
 hooks_manager = pyHook.HookManager()
 hooks_manager.KeyDown = OnKeyDown
 hooks_manager.HookKeyboard()

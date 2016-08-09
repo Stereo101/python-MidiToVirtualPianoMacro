@@ -44,6 +44,7 @@ class MidiFile:
 	divisionType = -1
 	itr = 0
 	runningStatus = -1
+	tempo = 120
 	
 	midiRecord = open("midiRecord.txt","w")
 	midiSong = open("song.txt","w")
@@ -85,7 +86,6 @@ class MidiFile:
 
 	
 	def __init__(self,filename):
-		self.midiSong.write("tempo= 180\n")
 		f = open(filename,"rb")
 		self.bytes = bytearray(f.read())
 		self.readEvents()
@@ -143,12 +143,14 @@ class MidiFile:
 			self.log("END TRACK")
 			self.itr += 2
 			return False
+		elif(type in [0x01,0x02,0x03,0x04,0x05,0x06,0x07]):
+			self.log("\t",self.readText(length))
+		elif(type == 0x51):
+			self.tempo = round(self.getInt(3) * 0.00024)
+			self.log("\tNew tempo is",str(self.tempo))
 		else:
-			if(type in [0x01,0x02,0x03,0x04,0x05,0x06,0x07]):
-				self.log("\t",self.readText(length))
-			else:
-				self.itr+= length
-			return True
+			self.itr+= length
+		return True
 		
 	def readMidiTrackEvent(self,length):
 		self.log("TRACKEVENT")
@@ -193,6 +195,7 @@ class MidiFile:
 			self.log(self.deltaTime/self.division,self.virtualPianoScale[key-23-13])
 			if(velocity > 0):
 				self.notes.append([(self.deltaTime/self.division),self.virtualPianoScale[key-23-13]])
+				
 		elif(not type >> 4 in [0x8,0x9,0xA,0xB,0xD,0xE]):
 			self.log("VoiceEvent",hex(type),hex(self.bytes[self.itr]),"DT",deltaT)
 			self.itr +=1
@@ -233,6 +236,14 @@ class MidiFile:
 			k = (k << 8) + n
 		self.itr += i
 		return k
+		
+	def round(i):
+		up = int(i+1)
+		down = int(i-1)
+		if(up - i < i - down):
+			return up
+		else:
+			return down
 
 fileList = os.listdir()
 midList = []
@@ -245,8 +256,32 @@ for i in range(len(midList)):
 
 choice = input()
 print("Processing",midList[ord(choice)-97])
+
+
+
 midi = MidiFile(midList[ord(choice)-97])
+midi.midiSong.write("tempo= " + str(midi.tempo) + "\n")
 midi.notes.sort()
 
+#Combine seperate lines with equal timings
+i = 1
+while(i < len(midi.notes)):
+	if(midi.notes[i-1][0] == midi.notes[i][0]):
+		midi.notes[i][1] += midi.notes[i-1][1]
+		midi.notes.remove(midi.notes[i-1])
+	else:
+		i+=1
+
+#Remove duplicate notes on same line
+for q in range(len(midi.notes)):
+	letterDict = {}
+	newline = ""
+	for i in range(len(midi.notes[q][1])):
+		if(not(midi.notes[q][1][i] in letterDict)):
+			newline += midi.notes[q][1][i]
+			letterDict[midi.notes[q][1][i]] = True
+	midi.notes[q][1] = newline
+
+#Write notes to song.txt
 for l in midi.notes:
 	midi.midiSong.write(str(l[0]) + " " + str(l[1]) + "\n")

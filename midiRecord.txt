@@ -10,6 +10,7 @@ MIDIMETAEVENT Sequence/Track Name LENGTH 0 DT 0
 MIDIMETAEVENT Copyright Notice LENGTH 19 DT 0 
 	 Copyright (C) 2008  
 MIDIMETAEVENT Set Tempo LENGTH 3 DT 0 
+	New tempo is 125 
 MIDIMETAEVENT Marker LENGTH 5 DT 0 
 	 Setup 
 MIDIMETAEVENT Time Signature LENGTH 4 DT 0 
