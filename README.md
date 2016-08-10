@@ -57,7 +57,7 @@ In case you wanted to manually edit the song.txt file heres a breakdown:
 		
 	The time will start at t=20, and immediately b will play, 5 beats will pass, then c AND d will be played at the same time
 	
-	You can also place notes in clusters and all will be played at the same time aswell, but the program does not generate lists like this
+	You can also place notes in clusters and all will be played at the same time aswell.
 	
 		20 hjk
 		
@@ -69,9 +69,11 @@ In case you wanted to manually edit the song.txt file heres a breakdown:
 	playSong.exe uses ctypes to execute the keypress as they appear
 	
 	
-IMPORTANT: 	The tempo defaults to 180 and must be set manually, this is too fast for most songs, finick with it in song.txt.
+IMPORTANT: 	The tempo defaults to 120 unless a tempo meta event occurs within the midifile.
 
 			The song's original tempo may not be the correct one to put in the song.txt file (It was for all my trials but I imagine this will not always be the case)
+			
+			For some songs the tempo is changed midsong many times over, and nothing is in place to account for that, so the last tempo recorded is the tempo it pulls from the midi and puts at the top of song.txt.
 			
 			
 Note: This program did work with a multiple instrument midi file, but gave very confusing results.
@@ -82,8 +84,8 @@ THINGS TO ADD:
 
 	START/END tags in the song.txt to make them easier to edit and playback specific portions
 	
-	Better midi file processing, it is fairly barebones right noww, Only listens for 0x9N messages with to get note presses
-		All other codes are read and basically ignored except for how big they are so I can advance throught the file on track
+	Better midi file processing, it is fairly barebones right now, Only listens for note on (0x9N, where N represents the channel in hex) messages with to get note presses
+		All other codes are read and basically ignored except for how big they are so I can advance through the file on track
 		
 	Pull tempo from the midi file correctly
 	

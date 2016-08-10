@@ -48,6 +48,7 @@ class MidiFile:
 	
 	midiRecord = open("midiRecord.txt","w")
 	midiSong = open("song.txt","w")
+	midiSheet = open("sheetConversion.txt","w")
 	
 	virtualPianoScale = "1!2@34$5%6^78*9(0qQwWeErtTyYuiIoOpPasSdDfgGhHjJklLzZxcCvVbBnm"
 	
@@ -191,10 +192,15 @@ class MidiFile:
 			velocity = self.bytes[self.itr]
 			self.itr += 1
 			
+			map = key - 23 - 12 - 1
+			while(map >= len(self.virtualPianoScale)):
+				map -= 12
+			while(map < 0):
+				map += 12
 			
-			self.log(self.deltaTime/self.division,self.virtualPianoScale[key-23-13])
+			self.log(self.deltaTime/self.division,self.virtualPianoScale[map])
 			if(velocity > 0):
-				self.notes.append([(self.deltaTime/self.division),self.virtualPianoScale[key-23-13]])
+				self.notes.append([(self.deltaTime/self.division),self.virtualPianoScale[map]])
 				
 		elif(not type >> 4 in [0x8,0x9,0xA,0xB,0xD,0xE]):
 			self.log("VoiceEvent",hex(type),hex(self.bytes[self.itr]),"DT",deltaT)
@@ -227,7 +233,10 @@ class MidiFile:
 	
 	def log(self,*arg):
 		for s in range(len(arg)):
-			self.midiRecord.write(str(arg[s]) + " ")
+			try:
+				self.midiRecord.write(str(arg[s]) + " ")
+			except:
+				self.midiRecord.write("[?] ")
 		self.midiRecord.write("\n")
 	
 	def getInt(self,i):
@@ -285,3 +294,21 @@ for q in range(len(midi.notes)):
 #Write notes to song.txt
 for l in midi.notes:
 	midi.midiSong.write(str(l[0]) + " " + str(l[1]) + "\n")
+
+
+#Make a more traditional virtualPiano sheet music made for reading by people
+offset = midi.notes[0][0]
+noteCount = 0
+for l in midi.notes:
+		
+	if(len(l[1]) > 1):
+		note = "["+l[1]+"]"
+	else:
+		note = l[1]
+	noteCount += 1
+	midi.midiSheet.write("%7s " % note)
+	if(noteCount % 8 == 0):
+		midi.midiSheet.write("\n")
+	
+			
+	
