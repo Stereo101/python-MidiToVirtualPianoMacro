@@ -82,7 +82,10 @@ class MidiFile:
 				0x7F : "Sequencer-Specific Meta-event",
 				0x21 : "Prefix Port",
 				0x20 : "Prefix Channel",
-				0x09 : "Other text format"
+				0x09 : "Other text format [0x09]",
+				0x08 : "Other text format [0x08]",
+				0x0A : "Other text format [0x0A]",
+				0x0C : "Other text format [0x0C]"
 				}
 
 	
@@ -144,7 +147,7 @@ class MidiFile:
 			self.log("END TRACK")
 			self.itr += 2
 			return False
-		elif(type in [0x01,0x02,0x03,0x04,0x05,0x06,0x07]):
+		elif(type in [0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0C]):
 			self.log("\t",self.readText(length))
 		elif(type == 0x51):
 			self.tempo = round(self.getInt(3) * 0.00024)
