@@ -142,7 +142,13 @@ class MidiFile:
 		type = self.bytes[self.itr]
 		self.itr+=1
 		length = self.readLength()
-		self.log("MIDIMETAEVENT",self.typeDict[type],"LENGTH",length,"DT",deltaT)
+		
+		try:
+			eventName = self.typeDict[type]
+		except:
+			eventName = "Unknown Event " + str(type)
+			
+		self.log("MIDIMETAEVENT",eventName,"LENGTH",length,"DT",deltaT)
 		if(type == 0x2F):
 			self.log("END TRACK")
 			self.itr += 2
