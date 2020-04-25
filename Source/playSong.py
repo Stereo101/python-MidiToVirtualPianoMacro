@@ -9,15 +9,22 @@ import pythoncom
 stopPumping = False
 user32 = ctypes.WinDLL('user32', use_last_error=True)
 tstart = time.time()
+isPaused = False
 isPlaying = False
-
 	
 def OnKeyDown(event):
 	global isPlaying
+	global isPaused
 	if(event.Key == "Delete"):
 		isPlaying = not isPlaying
 		if(isPlaying):
 			runMacro()
+	if(event.Key == "Insert"):
+		if(isPaused == True):
+			isPaused = False
+			runMacro()
+		if(isPaused == False):
+			isPaused = True
 	return True
 	
 INPUT_MOUSE    = 0
@@ -133,6 +140,7 @@ def pressLetter(charIn):
 	return
 		
 def processFile():
+	global pauseOffset
 	with open("song.txt","r") as macro_file:
 		lines = macro_file.read().split("\n")
 		tOffsetSet = False
@@ -154,6 +162,7 @@ def processFile():
 				tOffset = waitToPress
 				print("Starting macro with offset t=",tOffset)
 				tOffsetSet = True
+				pauseOffset = 0
 	return [tempo,tOffset,processedNotes]
 
 def floorToZero(i):
@@ -163,18 +172,40 @@ def floorToZero(i):
 		return 0
 	
 def runMacro():
+	global isPaused
 	global isPlaying
 	global infoTuple
+	global pauseOffset
 	tstart = time.time()
 	for l in infoTuple[2]:
-		if(not isPlaying):
+		if(isPlaying == False):
+			pauseOffset = 0
+			isPaused = False
 			break
-		goTime = (l[0] - infoTuple[1])*(infoTuple[0])
-		if(goTime - (time.time() - tstart) > 0):
-			time.sleep(floorToZero(goTime - (time.time() - tstart)))
+		if(pauseOffset == 0):
+			goTime = (l[0] - infoTuple[1])*(infoTuple[0])
+			if(goTime - (time.time() - tstart) > 0):
+				time.sleep(floorToZero(goTime - (time.time() - tstart)))
+		if(pauseOffset > 0):
+			goTime = (l[0] - pauseOffset)*(infoTuple[0])
+			if(goTime - (time.time() - tstart) > 0):
+				time.sleep(floorToZero(goTime - (time.time() - tstart)))
 		print("%10.2f %15s" % (l[0],l[1]))
-		for n in l[1]:
-			pressLetter(n)
+		if(isPaused == True):
+			pauseOffset = l[0]
+			print("PAUSED AT = ",pauseOffset)
+			print("PO = ", pauseOffset)
+			break
+		if(pauseOffset > 0):
+			if(l[0] >= pauseOffset):
+				for n in l[1]:
+					pressLetter(n)
+		if(pauseOffset == 0):
+			for n in l[1]:
+				pressLetter(n)
+
+
+		
 infoTuple = processFile()
 hooks_manager = pyHook.HookManager()
 hooks_manager.KeyDown = OnKeyDown
