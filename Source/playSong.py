@@ -1,105 +1,25 @@
-import sys
-import os
-import time
-import ctypes
-from ctypes import wintypes
-import pyHook
+# to build, use "cd (playsong directory)"
+# pyinstaller --onefile playSong.py
+
+import keyboard
 import pythoncom
+import threading
 
-stopPumping = False
-user32 = ctypes.WinDLL('user32', use_last_error=True)
-tstart = time.time()
+global isPlaying
+global infoTuple
+
 isPlaying = False
+storedIndex = 0
+conversionCases = {'!': '1', '@': '2', '£': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0'}
 
-	
-def OnKeyDown(event):
+def onDelPress(event):
 	global isPlaying
-	if(event.Key == "Delete"):
-		isPlaying = not isPlaying
-		if(isPlaying):
-			runMacro()
+	isPlaying = not isPlaying
+
+	if isPlaying:
+		playNextNote()
+
 	return True
-	
-INPUT_MOUSE    = 0
-INPUT_KEYBOARD = 1
-INPUT_HARDWARE = 2
-
-KEYEVENTF_EXTENDEDKEY = 0x0001
-KEYEVENTF_KEYUP       = 0x0002
-KEYEVENTF_UNICODE     = 0x0004
-KEYEVENTF_SCANCODE    = 0x0008
-
-MAPVK_VK_TO_VSC = 0
-
-# msdn.microsoft.com/en-us/library/dd375731
-VK_TAB  = 0x09
-VK_MENU = 0x12
-
-# C struct definitions
-
-wintypes.ULONG_PTR = wintypes.WPARAM
-
-class MOUSEINPUT(ctypes.Structure):
-    _fields_ = (("dx",          wintypes.LONG),
-                ("dy",          wintypes.LONG),
-                ("mouseData",   wintypes.DWORD),
-                ("dwFlags",     wintypes.DWORD),
-                ("time",        wintypes.DWORD),
-                ("dwExtraInfo", wintypes.ULONG_PTR))
-
-class KEYBDINPUT(ctypes.Structure):
-    _fields_ = (("wVk",         wintypes.WORD),
-                ("wScan",       wintypes.WORD),
-                ("dwFlags",     wintypes.DWORD),
-                ("time",        wintypes.DWORD),
-                ("dwExtraInfo", wintypes.ULONG_PTR))
-
-    def __init__(self, *args, **kwds):
-        super(KEYBDINPUT, self).__init__(*args, **kwds)
-        # some programs use the scan code even if KEYEVENTF_SCANCODE
-        # isn't set in dwFflags, so attempt to map the correct code.
-        if not self.dwFlags & KEYEVENTF_UNICODE:
-            self.wScan = user32.MapVirtualKeyExW(self.wVk,
-                                                 MAPVK_VK_TO_VSC, 0)
-
-class HARDWAREINPUT(ctypes.Structure):
-    _fields_ = (("uMsg",    wintypes.DWORD),
-                ("wParamL", wintypes.WORD),
-                ("wParamH", wintypes.WORD))
-
-class INPUT(ctypes.Structure):
-    class _INPUT(ctypes.Union):
-        _fields_ = (("ki", KEYBDINPUT),
-                    ("mi", MOUSEINPUT),
-                    ("hi", HARDWAREINPUT))
-    _anonymous_ = ("_input",)
-    _fields_ = (("type",   wintypes.DWORD),
-                ("_input", _INPUT))
-
-LPINPUT = ctypes.POINTER(INPUT)
-
-def _check_count(result, func, args):
-    if result == 0:
-        raise ctypes.WinError(ctypes.get_last_error())
-    return args
-
-user32.SendInput.errcheck = _check_count
-user32.SendInput.argtypes = (wintypes.UINT, # nInputs
-                             LPINPUT,       # pInputs
-                             ctypes.c_int)  # cbSize
-
-# Functions
-
-def PressKey(hexKeyCode):
-    x = INPUT(type=INPUT_KEYBOARD,
-              ki=KEYBDINPUT(wVk=hexKeyCode))
-    user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
-
-def ReleaseKey(hexKeyCode):
-    x = INPUT(type=INPUT_KEYBOARD,
-              ki=KEYBDINPUT(wVk=hexKeyCode,
-                            dwFlags=KEYEVENTF_KEYUP))
-    user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
 def isShifted(charIn):
 	asciiValue = ord(charIn)
@@ -108,28 +28,20 @@ def isShifted(charIn):
 	if(charIn in "!@#$%^&*()_+{}|:\"<>?"):
 		return True
 	return False
-	
 
-def getKeyValue(charIn):
-	asciiValue = ord(charIn)
-	if(asciiValue >= 97 and asciiValue <= 122):
-		return asciiValue - 32
-	if((asciiValue >= 48 and asciiValue <= 57) or (asciiValue >= 65 and asciiValue <= 90)):
-		return asciiValue
-	if(charIn in ")!@#$%^&*("):
-		return ")!@#$%^&*(".index(charIn) + 48
-		
-
-def pressLetter(charIn):
-	kv = getKeyValue(charIn)
-	if(isShifted(charIn)):
-		PressKey(160)
-		PressKey(kv)
-		ReleaseKey(kv)
-		ReleaseKey(160)
+def pressLetter(strLetter, t):
+	if isShifted(strLetter):
+		# we have to convert all symbols to numbers
+		if strLetter in conversionCases:
+			strLetter = conversionCases[strLetter]
+		keyboard.press('left shift')
+		keyboard.press(strLetter.lower())
+		keyboard.release('left shift')
+		keyboard.call_later(keyboard.release, args=(strLetter), delay=t*.9)
 	else:
-		PressKey(kv)
-		ReleaseKey(kv)
+		keyboard.press(strLetter)
+		keyboard.call_later(keyboard.release, args=(strLetter), delay=t*.9)
+
 	return
 		
 def processFile():
@@ -137,14 +49,14 @@ def processFile():
 		lines = macro_file.read().split("\n")
 		tOffsetSet = False
 		tOffset = 0
-		tempo = 60/float(lines[0].split(" ")[1])
+		tempo = 60/float(lines[0].split("=")[1])
 		
 		processedNotes = []
 		
 		for l in lines[1:]:
 			l = l.split(" ")
 			if(len(l) < 2):
-				#print("INVALID LINE")
+				# print("INVALID LINE")
 				continue
 			
 			waitToPress = float(l[0])
@@ -154,6 +66,7 @@ def processFile():
 				tOffset = waitToPress
 				print("Starting macro with offset t=",tOffset)
 				tOffsetSet = True
+
 	return [tempo,tOffset,processedNotes]
 
 def floorToZero(i):
@@ -161,22 +74,72 @@ def floorToZero(i):
 		return i
 	else:
 		return 0
+
+# for this method, we instead use delays as l[0] and work using indexes with delays instead of time
+# we'll use recursion and threading to press keys
+def parseInfo():
+	tempo = infoTuple[0]
+	notes = infoTuple[2]
 	
-def runMacro():
+	# parse time between each note
+	# while loop is required because we are editing the array as we go
+	i = 0
+	while i < len(notes)-1:
+		note = notes[i]
+		nextNote = notes[i+1]
+		if "tempo" in note[1]:
+			tempo = 60/float(note[1].split("=")[1])
+			notes.pop(i)
+
+			note = notes[i]
+			if i < len(notes)-1:
+				nextNote = notes[i+1]
+		else:
+			note[0] = (nextNote[0] - note[0]) * tempo
+			i += 1
+
+	# let's just hold the last note for 1 second because we have no data on it
+	notes[len(notes)-1][0] = 1.00
+
+	return notes
+
+def playNextNote():
 	global isPlaying
-	global infoTuple
-	tstart = time.time()
-	for l in infoTuple[2]:
-		if(not isPlaying):
-			break
-		goTime = (l[0] - infoTuple[1])*(infoTuple[0])
-		if(goTime - (time.time() - tstart) > 0):
-			time.sleep(floorToZero(goTime - (time.time() - tstart)))
-		print("%10.2f %15s" % (l[0],l[1]))
-		for n in l[1]:
-			pressLetter(n)
+	global storedIndex
+
+	notes = infoTuple[2]
+	if isPlaying and storedIndex < len(infoTuple[2]):
+		noteInfo = notes[storedIndex]
+		delay = floorToZero(noteInfo[0])
+
+		for n in noteInfo[1]:
+			pressLetter(n, delay)
+
+		print("%10.2f %15s" % (delay,noteInfo[1]))
+		storedIndex += 1
+		threading.Timer(delay, playNextNote).start()
+	elif storedIndex > len(infoTuple[2])-1:
+		isPlaying = False
+		storedIndex = 0
+
+def rewind(KeyboardEvent):
+	global storedIndex
+	if storedIndex - 10 < 0:
+		storedIndex = 0
+	else:
+		storedIndex -= 10
+
+def skip(KeyboardEvent):
+	global storedIndex
+	if storedIndex + 10 > len(infoTuple[2]):
+		isPlaying = False
+		storedIndex = 0
+	else:
+		storedIndex += 10
+
 infoTuple = processFile()
-hooks_manager = pyHook.HookManager()
-hooks_manager.KeyDown = OnKeyDown
-hooks_manager.HookKeyboard()
+infoTuple[2] = parseInfo()
+keyboard.on_press_key("delete", onDelPress)
+keyboard.on_press_key("home", rewind)
+keyboard.on_press_key("end", skip)
 pythoncom.PumpMessages()
