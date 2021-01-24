@@ -44,7 +44,7 @@ class MidiFile:
 	divisionType = -1
 	itr = 0
 	runningStatus = -1
-	tempo = 120
+	tempo = 0
 	
 	midiRecord = open("midiRecord.txt","w")
 	midiSong = open("song.txt","w")
@@ -156,8 +156,14 @@ class MidiFile:
 		elif(type in [0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0C]):
 			self.log("\t",self.readText(length))
 		elif(type == 0x51):
+			timeBytes = []
+			for i in range(self.itr, self.itr+3):
+				timeBytes.append(int(str(self.bytes[i])))
+			tempo = round(60000000/int(bytearray(timeBytes).hex(), 16))
+			# won't work without this line?
 			self.tempo = round(self.getInt(3) * 0.00024)
-			self.log("\tNew tempo is",str(self.tempo))
+			self.notes.append([(self.deltaTime/self.division),"tempo=" + str(tempo)])
+			self.log("\tNew tempo is", str(tempo))
 		else:
 			self.itr+= length
 		return True
@@ -274,50 +280,44 @@ for i in range(len(midList)):
 
 choice = input()
 print("Processing",midList[ord(choice)-97])
-
-
-
 midi = MidiFile(midList[ord(choice)-97])
-midi.midiSong.write("tempo= " + str(midi.tempo) + "\n")
-midi.notes.sort()
+midi.notes = sorted(midi.notes, key=lambda x: (float(x[0]), not "tempo" in x[1]))
 
 #Combine seperate lines with equal timings
-i = 1
-while(i < len(midi.notes)):
-	if(midi.notes[i-1][0] == midi.notes[i][0]):
-		midi.notes[i][1] += midi.notes[i-1][1]
-		midi.notes.remove(midi.notes[i-1])
+i = 0
+while(i < len(midi.notes)-1):
+	if (midi.notes[i][0] == midi.notes[i+1][0] and not "tempo" in midi.notes[i][1] and not "tempo" in midi.notes[i+1][1]):
+		midi.notes[i][1] += midi.notes[i+1][1]
+		midi.notes.pop(i+1)
 	else:
-		i+=1
+		i += 1
 
 #Remove duplicate notes on same line
 for q in range(len(midi.notes)):
 	letterDict = {}
 	newline = ""
-	for i in range(len(midi.notes[q][1])):
-		if(not(midi.notes[q][1][i] in letterDict)):
-			newline += midi.notes[q][1][i]
-			letterDict[midi.notes[q][1][i]] = True
-	midi.notes[q][1] = newline
+	if not "tempo" in midi.notes[q][1]:
+		for i in range(len(midi.notes[q][1])):
+			if(not(midi.notes[q][1][i] in letterDict)):
+				newline += midi.notes[q][1][i]
+				letterDict[midi.notes[q][1][i]] = True
+		midi.notes[q][1] = newline
+
 
 #Write notes to song.txt
 for l in midi.notes:
 	midi.midiSong.write(str(l[0]) + " " + str(l[1]) + "\n")
 
-
 #Make a more traditional virtualPiano sheet music made for reading by people
 offset = midi.notes[0][0]
 noteCount = 0
 for l in midi.notes:
-		
-	if(len(l[1]) > 1):
-		note = "["+l[1]+"]"
-	else:
-		note = l[1]
-	noteCount += 1
-	midi.midiSheet.write("%7s " % note)
-	if(noteCount % 8 == 0):
-		midi.midiSheet.write("\n")
-	
-			
-	
+	if not "tempo" in l[1]:
+		if(len(l[1]) > 1):
+			note = "["+l[1]+"]"
+		else:
+			note = l[1]
+		noteCount += 1
+		midi.midiSheet.write("%7s " % note)
+		if(noteCount % 8 == 0):
+			midi.midiSheet.write("\n")
