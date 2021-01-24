@@ -2,7 +2,6 @@
 # pyinstaller --onefile playSong.py
 
 import keyboard
-import pythoncom
 import threading
 
 global isPlaying
@@ -17,7 +16,10 @@ def onDelPress(event):
 	isPlaying = not isPlaying
 
 	if isPlaying:
+		print("Playing...")
 		playNextNote()
+	else:
+		print("Stopping...")
 
 	return True
 
@@ -37,7 +39,7 @@ def pressLetter(strLetter, t):
 		keyboard.press('left shift')
 		keyboard.press(strLetter.lower())
 		keyboard.release('left shift')
-		keyboard.call_later(keyboard.release, args=(strLetter), delay=t*.9)
+		keyboard.call_later(keyboard.release, args=(strLetter.lower()), delay=t*.9)
 	else:
 		keyboard.press(strLetter)
 		keyboard.call_later(keyboard.release, args=(strLetter), delay=t*.9)
@@ -126,8 +128,10 @@ def rewind(KeyboardEvent):
 	global storedIndex
 	if storedIndex - 10 < 0:
 		storedIndex = 0
+		
 	else:
 		storedIndex -= 10
+	print("Rewound to %.2f" % storedIndex)
 
 def skip(KeyboardEvent):
 	global storedIndex
@@ -136,10 +140,19 @@ def skip(KeyboardEvent):
 		storedIndex = 0
 	else:
 		storedIndex += 10
+	print("Skipped to %.2f" % storedIndex)
 
-infoTuple = processFile()
-infoTuple[2] = parseInfo()
-keyboard.on_press_key("delete", onDelPress)
-keyboard.on_press_key("home", rewind)
-keyboard.on_press_key("end", skip)
-pythoncom.PumpMessages()
+
+def main():
+	global isPlaying
+	global infoTuple
+	infoTuple = processFile()
+	infoTuple[2] = parseInfo()
+	keyboard.on_press_key("delete", onDelPress)
+	keyboard.on_press_key("home", rewind)
+	keyboard.on_press_key("end", skip)
+	while True:
+		input("Press Ctrl+C or close window to exit")
+		
+if __name__ == "__main__":
+	main()
