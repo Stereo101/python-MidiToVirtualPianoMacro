@@ -173,6 +173,7 @@ class MidiFile:
 		while(length > self.itr - start and continueFlag):
 			deltaT= self.readLength()
 			self.deltaTime += deltaT
+			
 			if(self.bytes[self.itr] == 0xFF):
 				self.itr+= 1
 				continueFlag = self.readMidiMetaEvent(deltaT)
@@ -199,6 +200,7 @@ class MidiFile:
 			self.itr += 1
 		
 		if(type >> 4 == 0x9):
+			#Key press
 			key = self.bytes[self.itr]
 			self.itr += 1
 			velocity = self.bytes[self.itr]
@@ -210,9 +212,33 @@ class MidiFile:
 			while(map < 0):
 				map += 12
 			
-			self.log(self.deltaTime/self.division,self.virtualPianoScale[map])
-			if(velocity > 0):
+			
+			if(velocity == 0):
+				#Spec defines velocity == 0 as an alternate notation for key release
+				self.log(self.deltaTime/self.division,"~"+self.virtualPianoScale[map])
+				self.notes.append([(self.deltaTime/self.division),"~"+self.virtualPianoScale[map]])
+				print("RELEASED",self.notes[-1])
+			else:
+				#Real keypress
+				self.log(self.deltaTime/self.division,self.virtualPianoScale[map])
 				self.notes.append([(self.deltaTime/self.division),self.virtualPianoScale[map]])
+				
+		elif(type >> 4 == 0x8):
+			#Key release
+			key = self.bytes[self.itr]
+			self.itr += 1
+			velocity = self.bytes[self.itr]
+			self.itr += 1
+			
+			map = key - 23 - 12 - 1
+			while(map >= len(self.virtualPianoScale)):
+				map -= 12
+			while(map < 0):
+				map += 12
+			
+			self.log(self.deltaTime/self.division,"~"+self.virtualPianoScale[map])
+			self.notes.append([(self.deltaTime/self.division),"~"+self.virtualPianoScale[map]])
+			print("RELEASED",self.notes[-1])
 				
 		elif(not type >> 4 in [0x8,0x9,0xA,0xB,0xD,0xE]):
 			self.log("VoiceEvent",hex(type),hex(self.bytes[self.itr]),"DT",deltaT)
@@ -278,12 +304,15 @@ def main():
 	choice = input()
 	print("Processing",midList[ord(choice)-97])
 	midi = MidiFile(midList[ord(choice)-97])
-	midi.notes = sorted(midi.notes, key=lambda x: (float(x[0]), not "tempo" in x[1]))
-
+	#midi.notes = sorted(midi.notes, key=lambda x: (float(x[0]), not "tempo" in x[1]))
+	midi.notes = sorted(midi.notes, key=lambda x: float(x[0]))
+	for x in midi.notes:
+		print(x)
+		#input()
 	#Combine seperate lines with equal timings
 	i = 0
 	while(i < len(midi.notes)-1):
-		if (midi.notes[i][0] == midi.notes[i+1][0] and not "tempo" in midi.notes[i][1] and not "tempo" in midi.notes[i+1][1]):
+		if (midi.notes[i][0] == midi.notes[i+1][0] and not "tempo" in midi.notes[i][1] and not "tempo" in midi.notes[i+1][1] and "~" not in midi.notes[i][1] and "~" not in midi.notes[i+1][1]):
 			midi.notes[i][1] += midi.notes[i+1][1]
 			midi.notes.pop(i+1)
 		else:
@@ -293,7 +322,7 @@ def main():
 	for q in range(len(midi.notes)):
 		letterDict = {}
 		newline = ""
-		if not "tempo" in midi.notes[q][1]:
+		if not "tempo" in midi.notes[q][1] and "~" not in midi.notes[q][1]:
 			for i in range(len(midi.notes[q][1])):
 				if(not(midi.notes[q][1][i] in letterDict)):
 					newline += midi.notes[q][1][i]
@@ -302,6 +331,7 @@ def main():
 
 
 	#Write notes to song.txt
+	midi.midiSong.write("playback_speed=1.0\n")
 	for l in midi.notes:
 		midi.midiSong.write(str(l[0]) + " " + str(l[1]) + "\n")
 
@@ -309,7 +339,7 @@ def main():
 	offset = midi.notes[0][0]
 	noteCount = 0
 	for l in midi.notes:
-		if not "tempo" in l[1]:
+		if not "tempo" in l[1] and "~" not in l[1]:
 			if(len(l[1]) > 1):
 				note = "["+l[1]+"]"
 			else:
