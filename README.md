@@ -1,6 +1,6 @@
 # Midi to Virtual Piano
 
-Generate virtual piano sheet music from a midi file to play yourself or have your computer play it for you. Known to works well with [virtualpiano](https://virtualpiano.net) and Roblox Multiplayer Piano.
+Generate virtual piano sheet music from a midi file to play yourself or have your computer play it for you. Known to work well with [virtualpiano](https://virtualpiano.net) and Roblox Multiplayer Piano.
 
 
 ## Warning
