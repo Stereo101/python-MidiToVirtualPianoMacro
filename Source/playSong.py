@@ -11,6 +11,11 @@ isPlaying = False
 storedIndex = 0
 conversionCases = {'!': '1', '@': '2', '£': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0'}
 
+scan_code_delete = (83,)
+scan_code_shift = (42,)
+scan_code_end = (79,)
+scan_code_home = (71,)
+
 def onDelPress(event):
 	global isPlaying
 	isPlaying = not isPlaying
@@ -37,9 +42,9 @@ def pressLetter(strLetter):
 		if strLetter in conversionCases:
 			strLetter = conversionCases[strLetter]
 		keyboard.release(strLetter.lower())
-		keyboard.press('left shift')
+		keyboard.press(scan_code_shift)
 		keyboard.press(strLetter.lower())
-		keyboard.release('left shift')
+		keyboard.release(scan_code_shift)
 	else:
 		keyboard.release(strLetter)
 		keyboard.press(strLetter)
@@ -172,9 +177,12 @@ def main():
 	global playback_speed
 	infoTuple = processFile()
 	infoTuple[2] = parseInfo()
-	keyboard.on_press_key("delete", onDelPress)
-	keyboard.on_press_key("home", rewind)
-	keyboard.on_press_key("end", skip)
+	
+
+	
+	keyboard.on_press_key(scan_code_delete, onDelPress)
+	keyboard.on_press_key(scan_code_home, rewind)
+	keyboard.on_press_key(scan_code_end, skip)
 	
 	print()
 	print("Controls")
