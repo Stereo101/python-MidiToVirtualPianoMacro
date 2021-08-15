@@ -1,69 +1,11 @@
 import os
 
-class MidiTrackEvent:
-	type = -1
-	channel = -1
-	
-	typeDict = {0x8 : "Key Release",
-				0x9 : "Key Press",
-				0xA : "AfterTouch",
-				0xB : "Pedal",
-				0xC : "Instrument Change",
-				0xD : "Global AfterTouch",
-				0xE : "Pitch Bend"
-				}
-				
-	typeBytes = {	0x8 : 2,
-					0x9 : 2,
-					0xA : 2,
-					0xB : 2,
-					0xC : 1,
-					0xD : 1,
-					0xE : 2
-				}
-
-class MidiMetaEvent:
-	offset = -1
-	type = -1
-	length = -1
-	bytes = -1
-
-	def __init__(self,offset,type,length,bytes):
-		self.offset = offset
-		self.type = type
-		self.length = length
-		self.bytes = bytes
 
 class MidiFile:
-	bytes = -1
-	headerLength = -1
-	headerOffset = 23
-	format = -1
-	tracks = -1
-	division = -1
-	divisionType = -1
-	itr = 0
-	runningStatus = -1
-	tempo = 0
-	
-	midiRecord = open("midiRecord.txt","w")
-	midiSong = open("song.txt","w")
-	midiSheet = open("sheetConversion.txt","w")
-	
-	virtualPianoScale = "1!2@34$5%6^78*9(0qQwWeErtTyYuiIoOpPasSdDfgGhHjJklLzZxcCvVbBnm"
-	
-	deltaTimeStarted = False
-	deltaTime = 0
-	
-	runningStatusSet = False
 	startSequence = [ 	[0x4D,0x54,0x68,0x64], #MThd
 						[0x4D,0x54,0x72,0x6B], #MTrk
 						[0xFF] #FF
 					]
-	startCounter = [0] * len(startSequence)
-	
-	events = []
-	notes = []
 	
 	typeDict = {0x00 : "Sequence Number",
 				0x01 : "Text Event",
@@ -89,10 +31,50 @@ class MidiFile:
 				}
 
 	
-	def __init__(self,filename):
-		f = open(filename,"rb")
-		self.bytes = bytearray(f.read())
-		self.readEvents()
+	def __init__(self,midi_file,verbose=False,debug=False):
+		self.verbose = verbose
+		self.debug = debug
+		
+		self.bytes = -1
+		self.headerLength = -1
+		self.headerOffset = 23
+		self.format = -1
+		self.tracks = -1
+		self.division = -1
+		self.divisionType = -1
+		self.itr = 0
+		self.runningStatus = -1
+		self.tempo = 0
+		
+		self.midiRecord_list = []
+		self.record_file = "midiRecord.txt"
+		self.midi_file = midi_file
+		
+		self.deltaTimeStarted = False
+		self.deltaTime = 0
+		
+		self.key_press_count = 0
+		
+		self.virtualPianoScale = list("1!2@34$5%6^78*9(0qQwWeErtTyYuiIoOpPasSdDfgGhHjJklLzZxcCvVbBnm")
+		
+		self.startCounter = [0] * len(MidiFile.startSequence)
+		
+		self.runningStatusSet = False
+		
+		self.events = []
+		self.notes = []
+		self.success = False
+		
+		print("Processing",midi_file)
+		try:
+			with open(self.midi_file,"rb") as f:
+				self.bytes = bytearray(f.read())
+			self.readEvents()
+			print(self.key_press_count,"notes processed")
+			self.clean_notes()
+			self.success = True
+		finally:
+			self.save_record(self.record_file)
 	
 	def checkStartSequence(self):
 		for i in range(len(self.startSequence)):
@@ -217,11 +199,11 @@ class MidiFile:
 				#Spec defines velocity == 0 as an alternate notation for key release
 				self.log(self.deltaTime/self.division,"~"+self.virtualPianoScale[map])
 				self.notes.append([(self.deltaTime/self.division),"~"+self.virtualPianoScale[map]])
-				print("RELEASED",self.notes[-1])
 			else:
 				#Real keypress
 				self.log(self.deltaTime/self.division,self.virtualPianoScale[map])
 				self.notes.append([(self.deltaTime/self.division),self.virtualPianoScale[map]])
+				self.key_press_count += 1
 				
 		elif(type >> 4 == 0x8):
 			#Key release
@@ -238,7 +220,6 @@ class MidiFile:
 			
 			self.log(self.deltaTime/self.division,"~"+self.virtualPianoScale[map])
 			self.notes.append([(self.deltaTime/self.division),"~"+self.virtualPianoScale[map]])
-			print("RELEASED",self.notes[-1])
 				
 		elif(not type >> 4 in [0x8,0x9,0xA,0xB,0xD,0xE]):
 			self.log("VoiceEvent",hex(type),hex(self.bytes[self.itr]),"DT",deltaT)
@@ -270,12 +251,24 @@ class MidiFile:
 					self.readMTrk()
 	
 	def log(self,*arg):
-		for s in range(len(arg)):
-			try:
-				self.midiRecord.write(str(arg[s]) + " ")
-			except:
-				self.midiRecord.write("[?] ")
-		self.midiRecord.write("\n")
+		if self.verbose or self.debug:
+			for s in range(len(arg)):
+				try:
+					print(str(arg[s]),end=" ")
+					self.midiRecord_list.append(str(arg[s]) + " ")
+				except:
+					print("[?]",end=" ")
+					self.midiRecord_list.append("[?] ")
+			print()
+			if self.debug: input()
+			self.midiRecord_list.append("\n")
+		else:
+			for s in range(len(arg)):
+				try:
+					self.midiRecord_list.append(str(arg[s]) + " ")
+				except:
+					self.midiRecord_list.append("[?] ")
+			self.midiRecord_list.append("\n")
 	
 	def getInt(self,i):
 		k = 0
@@ -291,63 +284,117 @@ class MidiFile:
 			return up
 		else:
 			return down
-def main():
+			
+	def clean_notes(self):
+		self.notes = sorted(self.notes, key=lambda x: float(x[0]))
+		
+		if(self.verbose):
+			for x in self.notes:
+				print(x)
+		
+		#Combine seperate lines with equal timings
+		i = 0
+		while(i < len(self.notes)-1):
+			a_time,b_time = self.notes[i][0],self.notes[i+1][0]
+			if (a_time == b_time):
+				a_notes,b_notes = self.notes[i][1],self.notes[i+1][1]
+				if "tempo" not in a_notes and "tempo" not in b_notes and "~" not in a_notes and "~" not in b_notes:
+					self.notes[i][1] += self.notes[i+1][1]
+					self.notes.pop(i+1)
+				else:
+					i += 1
+			else:
+				i += 1
+
+		#Remove duplicate notes on same line
+		for q in range(len(self.notes)):
+			letterDict = {}
+			newline = []
+			if not "tempo" in self.notes[q][1] and "~" not in self.notes[q][1]:
+				for i in range(len(self.notes[q][1])):
+					if(not(self.notes[q][1][i] in letterDict)):
+						newline.append(self.notes[q][1][i])
+						letterDict[self.notes[q][1][i]] = True
+				self.notes[q][1] = "".join(newline)
+		return
+		
+	def save_song(self,song_file):
+		print("Saving notes to",song_file)
+		with open(song_file,"w") as f:
+			f.write("playback_speed=1.0\n")
+			for l in self.notes:
+				f.write(str(l[0]) + " " + str(l[1]) + "\n")
+		return
+		
+	def save_sheet(self,sheet_file):
+		print("Saving sheets to",sheet_file)
+		offset = self.notes[0][0]
+		noteCount = 0
+		with open(sheet_file,"w") as f:
+			for timing,notes in self.notes:
+				if not "tempo" in notes and "~" not in notes:
+					if(len(notes) > 1):
+						note = "["+notes+"]"
+					else:
+						note = notes
+					noteCount += 1
+					f.write("%7s " % note)
+					if(noteCount % 8 == 0):
+						f.write("\n")
+		return
+		
+	def save_record(self,record_file):
+		print("Saving processing log to",record_file)
+		with open(record_file,"w") as f:
+			for s in self.midiRecord_list:
+				f.write(s)
+		return
+		
+def get_file_choice():
 	fileList = os.listdir()
 	midList = []
 	for f in fileList:
-		if(".mid" in f):
+		if(".mid" in f or ".mid" in f.lower()):
 			midList.append(f)
-	print("Press letter of midi file to process")
+	print("\nType the number of a midi file press enter:\n")
 	for i in range(len(midList)):
-		print(chr(97+i),":",midList[i])
+		print(i+1,":",midList[i])
 
-	choice = input()
-	print("Processing",midList[ord(choice)-97])
-	midi = MidiFile(midList[ord(choice)-97])
-	#midi.notes = sorted(midi.notes, key=lambda x: (float(x[0]), not "tempo" in x[1]))
-	midi.notes = sorted(midi.notes, key=lambda x: float(x[0]))
-	for x in midi.notes:
-		print(x)
-		#input()
-	#Combine seperate lines with equal timings
-	i = 0
-	while(i < len(midi.notes)-1):
-		if (midi.notes[i][0] == midi.notes[i+1][0] and not "tempo" in midi.notes[i][1] and not "tempo" in midi.notes[i+1][1] and "~" not in midi.notes[i][1] and "~" not in midi.notes[i+1][1]):
-			midi.notes[i][1] += midi.notes[i+1][1]
-			midi.notes.pop(i+1)
-		else:
-			i += 1
-
-	#Remove duplicate notes on same line
-	for q in range(len(midi.notes)):
-		letterDict = {}
-		newline = ""
-		if not "tempo" in midi.notes[q][1] and "~" not in midi.notes[q][1]:
-			for i in range(len(midi.notes[q][1])):
-				if(not(midi.notes[q][1][i] in letterDict)):
-					newline += midi.notes[q][1][i]
-					letterDict[midi.notes[q][1][i]] = True
-			midi.notes[q][1] = newline
-
-
-	#Write notes to song.txt
-	midi.midiSong.write("playback_speed=1.0\n")
-	for l in midi.notes:
-		midi.midiSong.write(str(l[0]) + " " + str(l[1]) + "\n")
-
-	#Make a more traditional virtualPiano sheet music made for reading by people
-	offset = midi.notes[0][0]
-	noteCount = 0
-	for l in midi.notes:
-		if not "tempo" in l[1] and "~" not in l[1]:
-			if(len(l[1]) > 1):
-				note = "["+l[1]+"]"
-			else:
-				note = l[1]
-			noteCount += 1
-			midi.midiSheet.write("%7s " % note)
-			if(noteCount % 8 == 0):
-				midi.midiSheet.write("\n")
+	choice = int(input(">"))
+	print()
+	choice_index = int(choice)
+	return midList[choice_index-1]
+	
+def main():
+	import sys
+	if len(sys.argv) > 1:
+		midi_file = sys.argv[1]
+		if not os.path.exists(midi_file):
+			print(f"Error: file not found '{midi_file}'")
+			return 1
+			
+		if(not (".mid" in midi_file or ".mid" in midi_file.lower())):
+			print(f"'{midi_file}' has an inccorect file extension")
+			print("make sure this file ends in '.mid'")
+			return 1
+	else:
+		midi_file = get_file_choice()
+	
+	try:
+		midi = MidiFile(midi_file)
+	except Exception as e:
+		print("An error has occured during processing::\n\n")
+		raise e
+		return 1
+	
+	song_file = "song.txt"
+	sheet_file = "sheetConversion.txt"
+	
+	midi.save_song(song_file)
+	midi.save_sheet(sheet_file)
+	print("\nSuccess, playSong is ready to run")
+	input("\n\nPress any key to exit...")
+	return 0
 				
 if __name__ == "__main__":
 	main()
