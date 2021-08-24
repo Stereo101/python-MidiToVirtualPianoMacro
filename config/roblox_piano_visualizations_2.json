@@ -1,0 +1,7 @@
+{	
+	"warning":"	Alt velocity creates tons of alt+key inputs that are already hotkeyed by the OS.
+				Autoplaying may cause audible beeps, audio mutes etc.
+				Please do your best to disable these hotkeys before playing"
+	"key_instant_release":false,
+	"alt_velocity":true
+}

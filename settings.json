@@ -1,0 +1,8 @@
+{ 
+	"config_dir":"config",
+	"song_dir":"songs",
+	"sheet_dir":"sheets",
+	"midi_dir":"midis",
+	
+	"config_order":["base.json"]
+}

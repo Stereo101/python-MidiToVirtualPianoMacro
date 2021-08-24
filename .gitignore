@@ -1,3 +1,6 @@
-Source/*.mid
-Source/*.txt
-*.txt
+midis/*
+sheets/*
+songs/*
+dist
+build
+*.spec
