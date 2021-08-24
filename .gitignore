@@ -1,6 +1,11 @@
 midis/*
+!midis/bach.mid
+
 sheets/*
+!sheets/bach.txt
+
 songs/*
+!songs/bach.txt
 dist
 build
 *.spec
