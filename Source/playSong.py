@@ -11,10 +11,10 @@ isPlaying = False
 storedIndex = 0
 conversionCases = {'!': '1', '@': '2', '£': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0'}
 
-scan_code_delete = (83,)
-scan_code_shift = (42,)
-scan_code_end = (79,)
-scan_code_home = (71,)
+key_delete = 'delete'
+key_shift = 'shift'
+key_end = 'end'
+key_home = 'home'
 
 def onDelPress(event):
 	global isPlaying
@@ -42,9 +42,9 @@ def pressLetter(strLetter):
 		if strLetter in conversionCases:
 			strLetter = conversionCases[strLetter]
 		keyboard.release(strLetter.lower())
-		keyboard.press(scan_code_shift)
+		keyboard.press(key_shift)
 		keyboard.press(strLetter.lower())
-		keyboard.release(scan_code_shift)
+		keyboard.release(key_shift)
 	else:
 		keyboard.release(strLetter)
 		keyboard.press(strLetter)
@@ -180,9 +180,9 @@ def main():
 	
 
 	
-	keyboard.on_press_key(scan_code_delete, onDelPress)
-	keyboard.on_press_key(scan_code_home, rewind)
-	keyboard.on_press_key(scan_code_end, skip)
+	keyboard.on_press_key(key_delete, onDelPress)
+	keyboard.on_press_key(key_home, rewind)
+	keyboard.on_press_key(key_end, skip)
 	
 	print()
 	print("Controls")
