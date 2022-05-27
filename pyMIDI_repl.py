@@ -105,10 +105,10 @@ def repl():
 				elif v.lower() == "false":
 					print("bool val")
 					v = False
-				elif v.isnumeric():
+				elif re.match(r"^[+-]?\d+$",v):
 					print("int val")
 					v = int(v)
-				elif re.match(r"[+-]?\d(>?\.\d+)?",v):
+				elif re.match(r"^[+-]?((\d+\.\d*)|(\.\d+))$",v):
 					print("float val")
 					v = float(v)
 				else:
