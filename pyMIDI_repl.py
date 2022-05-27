@@ -34,7 +34,9 @@ def repl():
 						"opts":"settings",
 						
 						"exit":"exit",
-						"quit":"exit"
+						"quit":"exit",
+                        "e":"exit",
+                        "q":"exit"
 					}
 	print("PyMidi REPL::")
 	repl_help()	
@@ -168,8 +170,8 @@ def repl_help():
 	
 	
 	desc = {	"search":"list songs to play. alias: s",
-				"platform":"list platform configuration files. alias: p,",
-				"process":"convert midi files into VP sheets",
+				"platform":"list platform configuration files. alias: plat",
+				"process":"convert midi files into VP sheets. alias: p",
 				"settings":"list current settings",
 				"set":"temporarily change a setting",
 				"exit":"quit the program"}
