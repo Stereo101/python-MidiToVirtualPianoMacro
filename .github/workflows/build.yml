@@ -3,9 +3,8 @@ on:
     - push
     - workflow_dispatch
 
-
 jobs:
-    build:
+    build-windows:
         name: Windows Build
         runs-on: windows-latest
         steps:
@@ -13,9 +12,9 @@ jobs:
             - name: Install Python
               uses: actions/setup-python@v2
               with:
-                  python-version: 3.8
+                python-version: 3.8
             - name: Install dependencies
-              run: pip install keyboard
+              run: pip install keyboard pyinstaller
             - name: Build MIDI converter
               run: pyinstaller --onefile pyMIDI.py
             - name: Build player
@@ -23,6 +22,5 @@ jobs:
             - name: Upload artifacts
               uses: actions/upload-artifact@v2
               with:
-                  name: Windows
-                  path: dist
-                  
+                name: Windows
+                path: dist
