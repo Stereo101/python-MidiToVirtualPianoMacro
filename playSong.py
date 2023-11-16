@@ -38,7 +38,6 @@ def isShifted(charIn):
 
 def pressLetter(strLetter):
 	if isShifted(strLetter):
-		# we have to convert all symbols to numbers
 		if strLetter in conversionCases:
 			strLetter = conversionCases[strLetter]
 		keyboard.release(strLetter.lower())
@@ -60,32 +59,53 @@ def releaseLetter(strLetter):
 	return
 	
 def processFile():
-	global playback_speed
-	with open("song.txt","r") as macro_file:
-		lines = macro_file.read().split("\n")
-		tOffsetSet = False
-		tOffset = 0
-		playback_speed = float(lines[0].split("=")[1])
-		print("Playback speed is set to %.2f" % playback_speed)
-		tempo = 60/float(lines[1].split("=")[1])
-		
-		processedNotes = []
-		
-		for l in lines[1:]:
-			l = l.split(" ")
-			if(len(l) < 2):
-				# print("INVALID LINE")
-				continue
-			
-			waitToPress = float(l[0])
-			notes = l[1]
-			processedNotes.append([waitToPress,notes])
-			if(not tOffsetSet):
-				tOffset = waitToPress
-				print("Start time offset =",tOffset)
-				tOffsetSet = True
+    global playback_speed
+    with open("song.txt", "r") as macro_file:
+        lines = macro_file.read().split("\n")
+        tOffsetSet = False
+        tOffset = 0
 
-	return [tempo,tOffset,processedNotes]
+        if len(lines) > 0 and "=" in lines[0]:
+            try:
+                playback_speed = float(lines[0].split("=")[1])
+                print("Playback speed is set to %.2f" % playback_speed)
+            except ValueError:
+                print("Error: Invalid playback speed value")
+                return None
+        else:
+            print("Error: Invalid playback speed format")
+            return None
+
+        tempo = None
+        processedNotes = []
+        
+        for line in lines[1:]:
+            if 'tempo' in line:
+                try:
+                    tempo = 60 / float(line.split("=")[1])
+                except ValueError:
+                    print("Error: Invalid tempo value")
+                    return None
+            else:
+                l = line.split(" ")
+                if len(l) < 2:
+                    continue
+                try:
+                    waitToPress = float(l[0])
+                    notes = l[1]
+                    processedNotes.append([waitToPress, notes])
+                    if not tOffsetSet:
+                        tOffset = waitToPress
+                        tOffsetSet = True
+                except ValueError:
+                    print("Error: Invalid note format")
+                    continue
+
+        if tempo is None:
+            print("Error: Tempo not specified")
+            return None
+
+    return [tempo, tOffset, processedNotes]
 
 def floorToZero(i):
 	if(i > 0):
