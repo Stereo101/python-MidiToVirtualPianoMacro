@@ -1,5 +1,5 @@
 import os
-
+import subprocess
 
 class MidiFile:
 	startSequence = [ 	[0x4D,0x54,0x68,0x64], #MThd
@@ -365,6 +365,12 @@ def get_file_choice():
 	choice_index = int(choice)
 	return midList[choice_index-1]
 	
+def runPlaySong():
+    try:
+        subprocess.run(["python", "playSong.py"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to run playSong.py: {e}")
+
 def main():
 	import sys
 	if len(sys.argv) > 1:
@@ -392,9 +398,7 @@ def main():
 	
 	midi.save_song(song_file)
 	midi.save_sheet(sheet_file)
-	print("\nSuccess, playSong is ready to run")
-	input("\n\nPress any key to exit...")
-	return 0
+	runPlaySong()
 				
 if __name__ == "__main__":
 	main()
