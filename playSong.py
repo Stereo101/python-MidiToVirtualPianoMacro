@@ -1,9 +1,9 @@
 # to build, use "cd (playsong directory)"
 # pyinstaller --onefile playSong.py
 
-import keyboard
 import subprocess
 import threading
+from pynput.keyboard import Key, Controller, Listener
 
 global isPlaying
 global infoTuple
@@ -16,6 +16,8 @@ elapsedTime = 0
 isPlaying = False
 storedIndex = 0
 conversionCases = {'!': '1', '@': '2', '£': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0'}
+
+keyboard_controller = Controller()
 
 key_delete = 'delete'
 key_shift = 'shift'
@@ -33,17 +35,15 @@ def calculateTotalDuration(notes):
     total_duration = sum([note[0] for note in notes])
     return total_duration
 
-def onDelPress(event):
-	global isPlaying
-	isPlaying = not isPlaying
+def onDelPress():
+    global isPlaying
+    isPlaying = not isPlaying
 
-	if isPlaying:
-		print("Playing...")
-		playNextNote()
-	else:
-		print("Stopping...")
-
-	return True
+    if isPlaying:
+        print("Playing...")
+        playNextNote()
+    else:
+        print("Stopping...")
 
 def isShifted(charIn):
 	asciiValue = ord(charIn)
@@ -54,26 +54,26 @@ def isShifted(charIn):
 	return False
 
 def pressLetter(strLetter):
-	if isShifted(strLetter):
-		if strLetter in conversionCases:
-			strLetter = conversionCases[strLetter]
-		keyboard.release(strLetter.lower())
-		keyboard.press(key_shift)
-		keyboard.press(strLetter.lower())
-		keyboard.release(key_shift)
-	else:
-		keyboard.release(strLetter)
-		keyboard.press(strLetter)
-	return
+    if isShifted(strLetter):
+        if strLetter in conversionCases:
+            strLetter = conversionCases[strLetter]
+        keyboard_controller.release(strLetter.lower())
+        keyboard_controller.press(Key.shift)
+        keyboard_controller.press(strLetter.lower())
+        keyboard_controller.release(Key.shift)
+    else:
+        keyboard_controller.release(strLetter)
+        keyboard_controller.press(strLetter)
+    return
 	
 def releaseLetter(strLetter):
-	if isShifted(strLetter):
-		if strLetter in conversionCases:
-				strLetter = conversionCases[strLetter]
-		keyboard.release(strLetter.lower())
-	else:
-		keyboard.release(strLetter)
-	return
+    if isShifted(strLetter):
+        if strLetter in conversionCases:
+                strLetter = conversionCases[strLetter]
+        keyboard_controller.release(strLetter.lower())
+    else:
+        keyboard_controller.release(strLetter)
+    return
 	
 def processFile():
     global playback_speed
@@ -210,33 +210,52 @@ def skip(KeyboardEvent):
 		storedIndex += 10
 	print("Skipped to %.2f" % storedIndex)
 
+def on_key_press(key):
+    global isPlaying, storedIndex
+    try:
+        if key == Key.delete:
+            onDelPress()
+        elif key == Key.home:
+            rewind(None)
+        elif key == Key.end:
+            skip(None)
+        elif key == Key.f5:
+            runPyMIDI()
+        elif key == Key.esc:
+            return False
+    except AttributeError:
+        pass
+
+def print_controls():
+    title = "Controls"
+    controls = [
+        ("DELETE", "Play/Pause"),
+        ("HOME", "Rewind"),
+        ("END", "Advance"),
+        ("F5", "Load New Song"),
+        ("ESC", "Exit")
+    ]
+
+    print(f"\n{'=' * 20}\n{title.center(20)}\n{'=' * 20}")
+
+    for key, action in controls:
+        print(f"{key.ljust(10)} : {action}")
+
+    print(f"{'=' * 20}\n")
 
 def main():
-	global isPlaying
-	global infoTuple
-	global playback_speed
-	infoTuple = processFile()
-	infoTuple[2] = parseInfo()
-	
+    global isPlaying, infoTuple, playback_speed
 
-	
-	keyboard.on_press_key(key_delete, onDelPress)
-	keyboard.on_press_key(key_home, rewind)
-	keyboard.on_press_key(key_end, skip)
-	keyboard.on_press_key(key_load, lambda _: runPyMIDI())
-	
-	print("\nControls")
-	print("-" * 20)
-	print("Press DELETE to play/pause")
-	print("Press HOME to rewind")
-	print("Press END to advance")
-	print("Press F5 to load a new song")
-	print("Press ESC to exit")
+    infoTuple = processFile()
+    if infoTuple is None:
+        return
 
-	while True:
-		if keyboard.is_pressed('esc'):
-			print("\nExiting...")
-			break
+    infoTuple[2] = parseInfo()
+
+    print_controls()
+
+    with Listener(on_press=on_key_press) as listener:
+        listener.join()
 			
 if __name__ == "__main__":
 	main()
