@@ -2,7 +2,7 @@
 Generate virtual piano sheet music from a MIDI file to play yourself or have your computer play it for you. Known to work well with [Virtual Piano](https://virtualpiano.net) and Roblox multiplayer pianos.
 
 ## Warning
-This piano player portion of this program makes use of the python keyboard library which generates key presses programmatically. Antivirus software may (correctly) detect this as malicious activity! The executable were generated through a `pyinstaller --onefile`, which bundles a python program and its dependencies into a portable executable that requires no setup. Everyone is welcome to audit the source files and generate the executable for themselves. 
+This piano player portion of this program makes use of the python keyboard library which generates key presses programmatically. Antivirus software may (correctly) detect this as malicious activity! The executables were generated via `pyinstaller --onefile`, which bundles a python program and its dependencies into a portable executable that requires no setup. Everyone is welcome to audit the scripts and generate the executable for themselves. 
 
 ## Features
 
@@ -17,8 +17,8 @@ This piano player portion of this program makes use of the python keyboard libra
 2. Extract `pyMIDI` and `playSong` and add some MIDI files to the same directory as the two programs.
 3. In the folder's address bar, type cmd and press Enter. This opens the Command Prompt in that folder. Then, type `pip install pynput` to install the required python package.
 4. Run `pyMIDI`. It will show you a list of songs from the directory it is in. Pick any song and it will generate a few files.
-   1. `song.txt` is that `playSong` will read to play the song.
-   2. `midiRecord.txt` is for debugging purposes. It shows that the converter did while converting the MIDI file.
+   1. `song.txt` is what `playSong` will read to play the song.
+   2. `midiRecord.txt` is for debugging purposes. It is a log of what the converter did while processing the MIDI file.
    3. `SheetConversion.txt` is a human-readable version of `song.txt` that shows the notes in a more readable format.
 5. Run `playSong`. It will wait for you to press the Delete key. Go to the program you want to play the song in and press the Delete key. The program will play the song for you.
 
