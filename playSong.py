@@ -1,27 +1,41 @@
 # to build, use "cd (playsong directory)"
 # pyinstaller --onefile playSong.py
 
-import keyboard
 import subprocess
 import threading
+import random
+
+from pynput.keyboard import Key, Controller, Listener
 
 global isPlaying
 global infoTuple
 global storedIndex
 global playback_speed
 global elapsedTime
-
-elapsedTime = 0
+global origionalPlaybackSpeed
+global speedMultiplier
+global legitModeActive
 
 isPlaying = False
+legitModeActive = False
+
 storedIndex = 0
+elapsedTime = 0
+origionalPlaybackSpeed = 1.0
+speedMultiplier = 2.0
+
 conversionCases = {'!': '1', '@': '2', '£': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0'}
+
+keyboardController = Controller()
 
 key_delete = 'delete'
 key_shift = 'shift'
 key_end = 'end'
 key_home = 'home'
 key_load = 'f5'
+key_speed_up = 'page_up'
+key_slow_down = 'page_down'
+key_legit_mode = 'insert'
 
 def runPyMIDI():
     try:
@@ -29,21 +43,25 @@ def runPyMIDI():
     except subprocess.CalledProcessError:
         print("pyMIDI.py was interrupted or encountered an error.")
 
+def toggleLegitMode(event):
+    global legitModeActive
+    legitModeActive = not legitModeActive
+    status = "ON" if legitModeActive else "OFF"
+    print(f"Legit Mode turned {status}")
+
 def calculateTotalDuration(notes):
     total_duration = sum([note[0] for note in notes])
     return total_duration
 
-def onDelPress(event):
-	global isPlaying
-	isPlaying = not isPlaying
+def onDelPress():
+    global isPlaying
+    isPlaying = not isPlaying
 
-	if isPlaying:
-		print("Playing...")
-		playNextNote()
-	else:
-		print("Stopping...")
-
-	return True
+    if isPlaying:
+        print("Playing...")
+        playNextNote()
+    else:
+        print("Stopping...")
 
 def isShifted(charIn):
 	asciiValue = ord(charIn)
@@ -53,27 +71,38 @@ def isShifted(charIn):
 		return True
 	return False
 
+def speedUp(event):
+    global playback_speed
+    playback_speed *= speedMultiplier
+    print(f"Speeding up: Playback speed is now {playback_speed:.2f}x")
+
+def slowDown(event):
+    global playback_speed
+    playback_speed /= speedMultiplier
+    playback_speed = max(playback_speed, origionalPlaybackSpeed)
+    print(f"Slowing down: Playback speed is now {playback_speed:.2f}x")
+
 def pressLetter(strLetter):
-	if isShifted(strLetter):
-		if strLetter in conversionCases:
-			strLetter = conversionCases[strLetter]
-		keyboard.release(strLetter.lower())
-		keyboard.press(key_shift)
-		keyboard.press(strLetter.lower())
-		keyboard.release(key_shift)
-	else:
-		keyboard.release(strLetter)
-		keyboard.press(strLetter)
-	return
+    if isShifted(strLetter):
+        if strLetter in conversionCases:
+            strLetter = conversionCases[strLetter]
+        keyboardController.release(strLetter.lower())
+        keyboardController.press(Key.shift)
+        keyboardController.press(strLetter.lower())
+        keyboardController.release(Key.shift)
+    else:
+        keyboardController.release(strLetter)
+        keyboardController.press(strLetter)
+    return
 	
 def releaseLetter(strLetter):
-	if isShifted(strLetter):
-		if strLetter in conversionCases:
-				strLetter = conversionCases[strLetter]
-		keyboard.release(strLetter.lower())
-	else:
-		keyboard.release(strLetter)
-	return
+    if isShifted(strLetter):
+        if strLetter in conversionCases:
+                strLetter = conversionCases[strLetter]
+        keyboardController.release(strLetter.lower())
+    else:
+        keyboardController.release(strLetter)
+    return
 	
 def processFile():
     global playback_speed
@@ -160,7 +189,7 @@ def parseInfo():
 	return notes
 
 def playNextNote():
-    global isPlaying, storedIndex, playback_speed, elapsedTime
+    global isPlaying, storedIndex, playback_speed, elapsedTime, legitModeActive
 
     notes = infoTuple[2]
     total_duration = calculateTotalDuration(notes)
@@ -168,15 +197,22 @@ def playNextNote():
     if isPlaying and storedIndex < len(notes):
         noteInfo = notes[storedIndex]
         delay = floorToZero(noteInfo[0])
+
+        # Legit Mode
+        if legitModeActive:
+            delay_variation = random.uniform(0.95, 1.05)
+            delay *= delay_variation
+
         elapsedTime += delay
 
-        # Process the notes for pressing or releasing
+        # Regular Mode
         if noteInfo[1][0] == "~":
             for n in noteInfo[1][1:]:
                 releaseLetter(n)
         else:
             for n in noteInfo[1]:
                 pressLetter(n)
+
         if "~" not in noteInfo[1]:
             elapsed_mins, elapsed_secs = divmod(elapsedTime, 60)
             total_mins, total_secs = divmod(total_duration, 60)
@@ -210,33 +246,60 @@ def skip(KeyboardEvent):
 		storedIndex += 10
 	print("Skipped to %.2f" % storedIndex)
 
+def onKeyPress(key):
+    global isPlaying, storedIndex, playback_speed, legitModeActive
+
+    try:
+        if key == Key.delete:
+            onDelPress()
+        elif key == Key.home:
+            rewind(None)
+        elif key == Key.end:
+            skip(None)
+        elif key == Key.page_up:
+            speedUp(None)
+        elif key == Key.page_down:
+            slowDown(None)
+        elif key == Key.insert:
+            toggleLegitMode(None)
+        elif key == Key.esc:
+            return False
+    except AttributeError:
+        pass
+
+def printControls():
+    title = "Controls"
+    controls = [
+        ("DELETE", "Play/Pause"),
+        ("HOME", "Rewind"),
+        ("END", "Advance"),
+        ("PAGE UP", "Speed Up"),
+        ("PAGE DOWN", "Slow Down"),
+        ("INSERT", "Toggle Legit Mode"),
+        ("F5", "Load New Song"),
+        ("ESC", "Exit")
+    ]
+
+    print(f"\n{'=' * 20}\n{title.center(20)}\n{'=' * 20}")
+
+    for key, action in controls:
+        print(f"{key.ljust(10)} : {action}")
+
+    print(f"{'=' * 20}\n")
 
 def main():
-	global isPlaying
-	global infoTuple
-	global playback_speed
-	infoTuple = processFile()
-	infoTuple[2] = parseInfo()
-	
+    global isPlaying, infoTuple, playback_speed
 
-	
-	keyboard.on_press_key(key_delete, onDelPress)
-	keyboard.on_press_key(key_home, rewind)
-	keyboard.on_press_key(key_end, skip)
-	keyboard.on_press_key(key_load, lambda _: runPyMIDI())
-	
-	print("\nControls")
-	print("-" * 20)
-	print("Press DELETE to play/pause")
-	print("Press HOME to rewind")
-	print("Press END to advance")
-	print("Press F5 to load a new song")
-	print("Press ESC to exit")
+    infoTuple = processFile()
+    if infoTuple is None:
+        return
 
-	while True:
-		if keyboard.is_pressed('esc'):
-			print("\nExiting...")
-			break
+    infoTuple[2] = parseInfo()
+
+    printControls()
+
+    with Listener(on_press=onKeyPress) as listener:
+        listener.join()
 			
 if __name__ == "__main__":
 	main()
