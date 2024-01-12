@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 class MidiFile:
 	startSequence = [ 	[0x4D,0x54,0x68,0x64], #MThd
@@ -321,7 +322,7 @@ class MidiFile:
 	def save_song(self,song_file):
 		print("Saving notes to",song_file)
 		with open(song_file,"w") as f:
-			f.write("playback_speed=1.0\n")
+			f.write("playback_speed=1.1\n")
 			for l in self.notes:
 				f.write(str(l[0]) + " " + str(l[1]) + "\n")
 		return
@@ -351,19 +352,25 @@ class MidiFile:
 		return
 		
 def get_file_choice():
-	fileList = os.listdir()
-	midList = []
-	for f in fileList:
-		if(".mid" in f or ".mid" in f.lower()):
-			midList.append(f)
-	print("\nType the number of a midi file press enter:\n")
-	for i in range(len(midList)):
-		print(i+1,":",midList[i])
+    midi_folder = 'midi'
+    if not os.path.exists(midi_folder):
+        os.makedirs(midi_folder)
+    
+    midList = [f for f in os.listdir(midi_folder) if f.lower().endswith('.mid')]
+    if not midList:
+        print("No MIDI files detected. Please add MIDI files to the 'midi' folder.")
+        return None
 
-	choice = int(input(">"))
-	print()
-	choice_index = int(choice)
-	return midList[choice_index-1]
+    print("\nType the number of a MIDI file and press enter:\n")
+    for i, midi_file in enumerate(midList):
+        print(f"{i + 1}: {midi_file}")
+
+    try:
+        choice = int(input("> "))
+        return os.path.join(midi_folder, midList[choice - 1])
+    except (IndexError, ValueError):
+        print("Invalid selection. Please try again.")
+        return None
 	
 def runPlaySong():
     try:
@@ -372,33 +379,34 @@ def runPlaySong():
         print(f"Failed to run playSong.py: {e}")
 
 def main():
-	import sys
-	if len(sys.argv) > 1:
-		midi_file = sys.argv[1]
-		if not os.path.exists(midi_file):
-			print(f"Error: file not found '{midi_file}'")
-			return 1
-			
-		if(not (".mid" in midi_file or ".mid" in midi_file.lower())):
-			print(f"'{midi_file}' has an inccorect file extension")
-			print("make sure this file ends in '.mid'")
-			return 1
-	else:
-		midi_file = get_file_choice()
-	
-	try:
-		midi = MidiFile(midi_file)
-	except Exception as e:
-		print("An error has occured during processing::\n\n")
-		raise e
-		return 1
-	
-	song_file = "song.txt"
-	sheet_file = "sheetConversion.txt"
-	
-	midi.save_song(song_file)
-	midi.save_sheet(sheet_file)
-	runPlaySong()
+    if len(sys.argv) > 1:
+        midi_file = sys.argv[1]
+        if not os.path.exists(midi_file):
+            print(f"Error: file not found '{midi_file}'")
+            return 1
+            
+        if not (".mid" in midi_file or ".mid" in midi_file.lower()):
+            print(f"'{midi_file}' has an incorrect file extension")
+            print("Make sure this file ends in '.mid'")
+            return 1
+    else:
+        midi_file = get_file_choice()
+        if midi_file is None:
+            return 1
+
+    try:
+        midi = MidiFile(midi_file)
+    except Exception as e:
+        print("An error has occurred during processing:\n\n")
+        raise e
+        return 1
+    
+    song_file = "song.txt"
+    sheet_file = "sheetConversion.txt"
+    
+    midi.save_song(song_file)
+    midi.save_sheet(sheet_file)
+    runPlaySong()
 				
 if __name__ == "__main__":
 	main()
