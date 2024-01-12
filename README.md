@@ -4,6 +4,14 @@ Generate virtual piano sheet music from a MIDI file to play yourself or have you
 ## Warning
 This piano player portion of this program makes use of the python keyboard library which generates key presses programmatically. Antivirus software may (correctly) detect this as malicious activity! The executable were generated through a `pyinstaller --onefile`, which bundles a python program and its dependencies into a portable executable that requires no setup. Everyone is welcome to audit the source files and generate the executable for themselves. 
 
+## Features
+
+- **MIDI to Virtual Piano Sheet Conversion**: Convert MIDI files into sheet music for virtual pianos.
+- **Automated and Manual Playback**: Play the music automatically or control playback manually.
+- **Human-Like Playback with Legit Mode**: Simulate human playing style with timing variations.
+- **Playback Speed Control**: Adjust the speed of the song playback as needed.
+- **Easy Setup**: Simple to install and run.
+
 ## Instructions
 1. Go to the releases page and download the latest release for your operating system (Windows, Linux, etc.).
 2. Extract `pyMIDI` and `playSong` and add some MIDI files to the same directory as the two programs.
