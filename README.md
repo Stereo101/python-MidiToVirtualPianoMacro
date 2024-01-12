@@ -15,7 +15,7 @@ This piano player portion of this program makes use of the python keyboard libra
 ## Instructions
 1. Go to the releases page and download the latest release for your operating system (Windows, Linux, etc.).
 2. Extract `pyMIDI` and `playSong` and add some MIDI files to the same directory as the two programs.
-3. In the folder's address bar, type cmd and press Enter. This opens the Command Prompt in that folder. Then, type `pip install keyboard` to install the required python package.
+3. In the folder's address bar, type cmd and press Enter. This opens the Command Prompt in that folder. Then, type `pip install pynput` to install the required python package.
 4. Run `pyMIDI`. It will show you a list of songs from the directory it is in. Pick any song and it will generate a few files.
    1. `song.txt` is that `playSong` will read to play the song.
    2. `midiRecord.txt` is for debugging purposes. It shows that the converter did while converting the MIDI file.
