@@ -1,7 +1,7 @@
 # to build, use "cd (playsong directory)"
 # pyinstaller --onefile playSong.py
 
-import subprocess
+import pyMIDI
 import threading
 import random
 
@@ -39,9 +39,9 @@ key_legit_mode = 'insert'
 
 def runPyMIDI():
     try:
-        subprocess.run(["python", "pyMIDI.py"], check=True)
-    except subprocess.CalledProcessError:
-        print("pyMIDI.py was interrupted or encountered an error.")
+        pyMIDI.main()
+    except Exception as e:
+        print(f"pyMIDI.py was interrupted or encountered an error: {e}")
 
 def toggleLegitMode(event):
     global legitModeActive
@@ -79,8 +79,8 @@ def speedUp(event):
 def slowDown(event):
     global playback_speed
     playback_speed /= speedMultiplier
-    playback_speed = max(playback_speed, origionalPlaybackSpeed)
     print(f"Slowing down: Playback speed is now {playback_speed:.2f}x")
+
 
 def pressLetter(strLetter):
     if isShifted(strLetter):
@@ -197,11 +197,17 @@ def playNextNote():
     if isPlaying and storedIndex < len(notes):
         noteInfo = notes[storedIndex]
         delay = floorToZero(noteInfo[0])
-
         # Legit Mode
         if legitModeActive:
-            delay_variation = random.uniform(0.95, 1.05)
+            delay_variation = random.uniform(0.90, 1.10)
             delay *= delay_variation
+
+            if random.random() < 0.05:
+                if random.random() < 0.5 and len(noteInfo[1]) > 1:
+                    noteInfo[1] = noteInfo[1][1:]
+                else:
+                    if storedIndex == 0 or notes[storedIndex-1][0] > 0.3:
+                        delay += random.uniform(0.1, 0.5)
 
         elapsedTime += delay
 
@@ -262,6 +268,8 @@ def onKeyPress(key):
             slowDown(None)
         elif key == Key.insert:
             toggleLegitMode(None)
+        elif key == Key.f5:
+            runPyMIDI()
         elif key == Key.esc:
             return False
     except AttributeError:
@@ -276,7 +284,7 @@ def printControls():
         ("PAGE UP", "Speed Up"),
         ("PAGE DOWN", "Slow Down"),
         ("INSERT", "Toggle Legit Mode"),
-        ("F5", "Load New Song"),
+        ("F5", "Load New Song (NOT RECOMMENDED)"),
         ("ESC", "Exit")
     ]
 
