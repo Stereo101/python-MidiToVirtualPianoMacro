@@ -1,5 +1,5 @@
 import os
-import subprocess
+import playSong
 import sys
 
 class MidiFile:
@@ -374,8 +374,8 @@ def get_file_choice():
 	
 def runPlaySong():
     try:
-        subprocess.run(["python", "playSong.py"], check=True)
-    except subprocess.CalledProcessError as e:
+        playSong.main()
+    except Exception as e:
         print(f"Failed to run playSong.py: {e}")
 
 def main():
