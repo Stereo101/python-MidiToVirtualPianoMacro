@@ -1,6 +1,9 @@
 # Midi to Virtual Piano
 Generate virtual piano sheet music from a MIDI file to play yourself or have your computer play it for you. Known to work well with [Virtual Piano](https://virtualpiano.net) and Roblox multiplayer pianos.
 
+# Discord
+https://discord.gg/Z4msASBqrR
+
 ## Warning
 This piano player portion of this program makes use of the python keyboard library which generates key presses programmatically. Antivirus software may (correctly) detect this as malicious activity! The executables were generated via `pyinstaller --onefile`, which bundles a python program and its dependencies into a portable executable that requires no setup. Everyone is welcome to audit the scripts and generate the executable for themselves. 
 
