@@ -13,6 +13,7 @@ This piano player portion of this program makes use of the python keyboard libra
 - **Automated and Manual Playback**: Play the music automatically or control playback manually.
 - **Human-Like Playback with Legit Mode**: Simulate human playing style with timing variations.
 - **Playback Speed Control**: Adjust the speed of the song playback as needed.
+- **Auto Tempo*: Adjusts the tempo based on the song.
 - **Easy Setup**: Simple to install and run.
 
 ## Instructions
