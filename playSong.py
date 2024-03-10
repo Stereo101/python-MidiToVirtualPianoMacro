@@ -188,12 +188,24 @@ def parseInfo():
 
 	return notes
 
+def adjustTempoForCurrentNote():
+    global playback_speed, infoTuple, storedIndex
+    tempo_changes = infoTuple[3]
+
+    for change in tempo_changes:
+        if change[0] == storedIndex:
+            new_tempo = change[1]
+            playback_speed = new_tempo / origionalPlaybackSpeed
+            print(f"Tempo changed: New playback speed is {playback_speed:.2f}x")
+
 def playNextNote():
     global isPlaying, storedIndex, playback_speed, elapsedTime, legitModeActive
 
-    notes = infoTuple[2]
+    adjustTempoForCurrentNote()
+    
     total_duration = calculateTotalDuration(notes)
 
+    notes = infoTuple[2]
     if isPlaying and storedIndex < len(notes):
         noteInfo = notes[storedIndex]
         delay = floorToZero(noteInfo[0])
