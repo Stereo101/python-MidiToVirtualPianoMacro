@@ -1,5 +1,5 @@
 # Midi to Virtual Piano
-Generate virtual piano sheet music from a MIDI file to play yourself or have your computer play it for you. Known to work well with [Virtual Piano](https://virtualpiano.net) and Roblox multiplayer pianos.
+Generate virtual piano sheet music from a MIDI file also known as .mid files to play yourself or have your computer play it for you. Known to work well with [Virtual Piano](https://virtualpiano.net) and Roblox pianos.
 
 # Discord
 https://discord.gg/Z4msASBqrR
@@ -16,14 +16,19 @@ This piano player portion of this program makes use of the python keyboard libra
 - **Easy Setup**: Simple to install and run.
 
 ## Instructions
-1. Go to the releases page and download the latest release for your operating system (Windows, Linux, etc.).
-2. Extract `pyMIDI` and `playSong` and add some MIDI files to the same directory as the two programs.
-3. In the folder's address bar, type cmd and press Enter. This opens the Command Prompt in that folder. Then, type `pip install pynput` to install the required python package.
-4. Run `pyMIDI`. It will show you a list of songs from the directory it is in. Pick any song and it will generate a few files.
-   1. `song.txt` is what `playSong` will read to play the song.
+
+`Make sure that python is installed and in PATH`
+
+1. Go to the releases page and download the latest release for your operating system (Windows, Linux, etc.) or clone the repository using `git clone https://github.com/Stereo101/python-MidiToVirtualPianoMacro`.
+2. Extract `pyMIDI` and `playSong` and add some MIDI files to the midi directory.
+3. Install `pynput` by running `pip install pynput` in your terminal (Command Prompt for Windows. Terminal for MacOS and Linux.) 
+4. Run `pyMIDI`. It will show you a list of songs from the midi directory. Pick any song and it will generate a few files.
+   1. `song.txt` is what the program will read to play the song.
    2. `midiRecord.txt` is for debugging purposes. It is a log of what the converter did while processing the MIDI file.
    3. `SheetConversion.txt` is a human-readable version of `song.txt` that shows the notes in a more readable format.
-5. Run `playSong`. It will wait for you to press the Delete key. Go to the program you want to play the song in and press the Delete key. The program will play the song for you.
+5. It will wait for you to press the Delete key. Go to the program you want to play the song in and press the Delete key. The program will play the song for you.
+
+It is not recommended to run `playsong` unless you know what you are doing.
 
 ## Tutorials and demos
 ### Volcaniks' youtube guide
