@@ -189,7 +189,7 @@ def parseInfo():
 	return notes
 
 def adjustTempoForCurrentNote():
-    global playback_speed, infoTuple, storedIndex
+    global isPlaying, storedIndex, playback_speed, elapsedTime, legitModeActive
     tempo_changes = infoTuple[3]
 
     for change in tempo_changes:
