@@ -1,4 +1,2 @@
-Source/*.mid
-Source/*.txt
 *.txt
 __pycache__/
