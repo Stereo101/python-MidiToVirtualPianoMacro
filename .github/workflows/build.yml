@@ -1,4 +1,4 @@
-name: Build project and draft release
+name: Build project
 on:
     - push
     - workflow_dispatch
@@ -14,7 +14,7 @@ jobs:
               with:
                 python-version: 3.11
             - name: Install dependencies
-              run: pip install keyboard pyinstaller
+              run: pip install keyboard pyinstaller pynput
             - name: Build MIDI converter
               run: pyinstaller --onefile pyMIDI.py
             - name: Build player
