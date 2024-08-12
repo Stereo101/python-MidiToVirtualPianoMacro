@@ -1,6 +1,6 @@
 # MIDI to Virtual Piano Converter
 
-Our partner application can be found over here: [MIDIPlusPlus](https://github.com/Zephkek/MIDIPlusPlus), featuring a ton of improvements and obfuscation.
+Our partner application can be found over here: [MIDIPlusPlus](https://github.com/Zephkek/MIDIPlusPlus), featuring a ton of improvements and optimization.
 
 Easily convert MIDI files into virtual piano sheet music for manual play or automated playback on platforms like [Virtual Piano](https://virtualpiano.net) and Roblox pianos.
 
