@@ -2,6 +2,10 @@
 
 Our partner application can be found over here: [MIDIPlusPlus](https://github.com/Zephkek/MIDIPlusPlus), featuring a ton of improvements and optimization.
 
+## 💬 Join the Community
+
+Need help or want to connect with others using the program? Join our [Discord server](https://discord.gg/Z4msASBqrR).
+
 Easily convert MIDI files into virtual piano sheet music for manual play or automated playback on platforms like [Virtual Piano](https://virtualpiano.net) and Roblox pianos.
 
 ## 🎹 Features
@@ -61,7 +65,3 @@ Ensure you have Python installed and added to your system PATH.
 These videos link to potentially unsafe third-party downloads. Proceed with caution:
 - [Video 1](https://www.youtube.com/watch?v=wNDSCnH23eQ)
 - [Video 2](https://www.youtube.com/watch?v=6kt07i82QlE)
-
-## 💬 Join the Community
-
-Need help or want to connect with others using the program? Join our [Discord server](https://discord.gg/Z4msASBqrR).
