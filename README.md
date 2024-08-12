@@ -1,46 +1,67 @@
-# Midi to Virtual Piano
-Generate virtual piano sheet music from a MIDI file also known as .mid files to play yourself or have your computer play it for you. Known to work well with [Virtual Piano](https://virtualpiano.net) and Roblox pianos.
+# MIDI to Virtual Piano Converter
 
-# Discord
-https://discord.gg/Z4msASBqrR
+Our partner application can be found over here: [MIDIPlusPlus](https://github.com/Zephkek/MIDIPlusPlus), featuring a ton of improvements and obfuscation.
 
-## Warning
-This piano player portion of this program makes use of the python keyboard library which generates key presses programmatically. Antivirus software may (correctly) detect this as malicious activity! The executables were generated via `pyinstaller --onefile`, which bundles a python program and its dependencies into a portable executable that requires no setup. Everyone is welcome to audit the scripts and generate the executable for themselves. 
+Easily convert MIDI files into virtual piano sheet music for manual play or automated playback on platforms like [Virtual Piano](https://virtualpiano.net) and Roblox pianos.
 
-## Features
+## 🎹 Features
 
-- **MIDI to Virtual Piano Sheet Conversion**: Convert MIDI files into sheet music for virtual pianos.
-- **Automated and Manual Playback**: Play the music automatically or control playback manually.
-- **Human-Like Playback with Legit Mode**: Simulate human playing style with timing variations.
-- **Playback Speed Control**: Adjust the speed of the song playback as needed.
-- **Auto Tempo*: Adjusts the tempo based on the song.
-- **Easy Setup**: Simple to install and run.
+- **MIDI to Virtual Piano Sheet Conversion**: Quickly convert MIDI files into sheet music compatible with virtual pianos.
+- **Automated and Manual Playback**: Choose between automated playback or manual control for playing the music.
+- **Human-Like Playback with Legit Mode**: Simulate a human playing style with natural timing variations.
+- **Playback Speed Control**: Adjust the playback speed to match your preference.
+- **Auto Tempo Adjustment**: Automatically adjusts the tempo to suit the song.
+- **Simple Setup**: Easy to install and run with minimal configuration.
 
-## Instructions
+## ⚠️ Important Information
 
-`Make sure that python is installed and in PATH`
+This program uses the Python `pynput` library to simulate key presses. Some antivirus software may flag this as suspicious behavior. The executable files are created using `pyinstaller --onefile`, which bundles the Python program and its dependencies into a single, portable executable. You are encouraged to review the scripts and generate the executable yourself for added security.
 
-1. Go to the releases page and download the latest release for your operating system (Windows, Linux, etc.) or clone the repository using `git clone https://github.com/Stereo101/python-MidiToVirtualPianoMacro`.
-2. Extract `pyMIDI` and `playSong` and add some MIDI files to the midi directory.
-3. Install `pynput` by running `pip install pynput` in your terminal (Command Prompt for Windows. Terminal for MacOS and Linux.) 
-4. Run `pyMIDI`. It will show you a list of songs from the midi directory. Pick any song and it will generate a few files.
-   1. `song.txt` is what the program will read to play the song.
-   2. `midiRecord.txt` is for debugging purposes. It is a log of what the converter did while processing the MIDI file.
-   3. `SheetConversion.txt` is a human-readable version of `song.txt` that shows the notes in a more readable format.
-5. It will wait for you to press the Delete key. Go to the program you want to play the song in and press the Delete key. The program will play the song for you.
+## 🚀 Getting Started
 
-It is not recommended to run `playsong` unless you know what you are doing.
+### Prerequisites
 
-## Tutorials and demos
-### Volcaniks' youtube guide
-https://www.youtube.com/watch?v=U1a6-y5X8BQ
+Ensure you have Python installed and added to your system PATH.
 
-### Prizels youtube guide
-https://www.youtube.com/watch?v=QsLP5m1MB3k
-	
-## Shady Instruction videos
-These videos link to *potentially* unsafe 3rd party downloads
-```
-https://www.youtube.com/watch?v=wNDSCnH23eQ
-https://www.youtube.com/watch?v=6kt07i82QlE
-```
+### Installation
+
+1. **Download or Clone**: Visit the [releases page](https://github.com/Stereo101/python-MidiToVirtualPianoMacro/releases) and download the latest release for your operating system, or clone the repository:
+
+    ```bash
+    git clone https://github.com/Stereo101/python-MidiToVirtualPianoMacro
+    ```
+
+2. **Extract Files**: Extract the contents of `pyMIDI` and `playSong`. Add your MIDI files to the `midi` directory.
+
+3. **Install Dependencies**: Open your terminal (Command Prompt for Windows, Terminal for macOS and Linux) and install the required Python library:
+
+    ```bash
+    pip install pynput
+    ```
+
+4. **Run the Program**:
+
+   - Execute `pyMIDI` in your terminal. The program will list available songs from the `midi` directory.
+   - Select a song to generate several files:
+     - `song.txt`: The program reads this file to play the song.
+     - `midiRecord.txt`: A debug log detailing the conversion process.
+     - `SheetConversion.txt`: A human-readable version of `song.txt` displaying the notes in a more understandable format.
+   - The program will wait for you to press the `Delete` key. Switch to your target application (e.g., Virtual Piano) and press `Delete` to start the automated playback.
+
+## 📚 Tutorials and Demos
+
+### Volcaniks' YouTube Guide
+- [Watch the guide](https://www.youtube.com/watch?v=U1a6-y5X8BQ)
+
+### Prizels' YouTube Guide
+- [Watch the guide](https://www.youtube.com/watch?v=QsLP5m1MB3k)
+
+### ⚠️ Shady Instruction Videos
+
+These videos link to potentially unsafe third-party downloads. Proceed with caution:
+- [Video 1](https://www.youtube.com/watch?v=wNDSCnH23eQ)
+- [Video 2](https://www.youtube.com/watch?v=6kt07i82QlE)
+
+## 💬 Join the Community
+
+Need help or want to connect with others using the program? Join our [Discord server](https://discord.gg/Z4msASBqrR).
