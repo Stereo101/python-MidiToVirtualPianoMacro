@@ -1,11 +1,8 @@
-# to build, use "cd (playsong directory)"
-# pyinstaller --onefile playSong.py
-
 import pyMIDI
 import threading
 import random
-
 from pynput.keyboard import Key, Controller, Listener
+import time
 
 global isPlaying
 global infoTuple
@@ -15,6 +12,7 @@ global elapsedTime
 global origionalPlaybackSpeed
 global speedMultiplier
 global legitModeActive
+global heldNotes
 
 isPlaying = False
 legitModeActive = False
@@ -23,6 +21,7 @@ storedIndex = 0
 elapsedTime = 0
 origionalPlaybackSpeed = 1.0
 speedMultiplier = 2.0
+heldNotes = {}
 
 conversionCases = {'!': '1', '@': '2', '£': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0'}
 
@@ -64,12 +63,12 @@ def onDelPress():
         print("Stopping...")
 
 def isShifted(charIn):
-	asciiValue = ord(charIn)
-	if(asciiValue >= 65 and asciiValue <= 90):
-		return True
-	if(charIn in "!@#$%^&*()_+{}|:\"<>?"):
-		return True
-	return False
+    asciiValue = ord(charIn)
+    if asciiValue >= 65 and asciiValue <= 90:
+        return True
+    if charIn in "!@#$%^&*()_+{}|:\"<>?":
+        return True
+    return False
 
 def speedUp(event):
     global playback_speed
@@ -80,7 +79,6 @@ def slowDown(event):
     global playback_speed
     playback_speed /= speedMultiplier
     print(f"Slowing down: Playback speed is now {playback_speed:.2f}x")
-
 
 def pressLetter(strLetter):
     if isShifted(strLetter):
@@ -94,16 +92,16 @@ def pressLetter(strLetter):
         keyboardController.release(strLetter)
         keyboardController.press(strLetter)
     return
-	
+    
 def releaseLetter(strLetter):
     if isShifted(strLetter):
         if strLetter in conversionCases:
-                strLetter = conversionCases[strLetter]
+            strLetter = conversionCases[strLetter]
         keyboardController.release(strLetter.lower())
     else:
         keyboardController.release(strLetter)
     return
-	
+    
 def processFile():
     global playback_speed
     with open("song.txt", "r") as macro_file:
@@ -151,118 +149,133 @@ def processFile():
             print("Error: Tempo not specified")
             return None
 
-    return [tempo, tOffset, processedNotes]
+    return [tempo, tOffset, processedNotes, []]
 
 def floorToZero(i):
-	if(i > 0):
-		return i
-	else:
-		return 0
+    if i > 0:
+        return i
+    else:
+        return 0
 
 # for this method, we instead use delays as l[0] and work using indexes with delays instead of time
 # we'll use recursion and threading to press keys
 def parseInfo():
-	
-	tempo = infoTuple[0]
-	notes = infoTuple[2][1:]
-	
-	# parse time between each note
-	# while loop is required because we are editing the array as we go
-	i = 0
-	while i < len(notes)-1:
-		note = notes[i]
-		nextNote = notes[i+1]
-		if "tempo" in note[1]:
-			tempo = 60/float(note[1].split("=")[1])
-			notes.pop(i)
+    tempo = infoTuple[0]
+    notes = infoTuple[2][1:]
+    
+    # parse time between each note
+    # while loop is required because we are editing the array as we go
+    i = 0
+    while i < len(notes) - 1:
+        note = notes[i]
+        nextNote = notes[i + 1]
+        if "tempo" in note[1]:
+            tempo = 60 / float(note[1].split("=")[1])
+            notes.pop(i)
 
-			note = notes[i]
-			if i < len(notes)-1:
-				nextNote = notes[i+1]
-		else:
-			note[0] = (nextNote[0] - note[0]) * tempo
-			i += 1
+            note = notes[i]
+            if i < len(notes) - 1:
+                nextNote = notes[i + 1]
+        else:
+            note[0] = (nextNote[0] - note[0]) * tempo
+            i += 1
 
-	# let's just hold the last note for 1 second because we have no data on it
-	notes[len(notes)-1][0] = 1.00
+    # let's just hold the last note for 1 second because we have no data on it
+    notes[len(notes) - 1][0] = 1.00
 
-	return notes
+    return notes
 
 def adjustTempoForCurrentNote():
     global isPlaying, storedIndex, playback_speed, elapsedTime, legitModeActive
-    tempo_changes = infoTuple[3]
+    if len(infoTuple) > 3:
+        tempo_changes = infoTuple[3]
 
-    for change in tempo_changes:
-        if change[0] == storedIndex:
-            new_tempo = change[1]
-            playback_speed = new_tempo / origionalPlaybackSpeed
-            print(f"Tempo changed: New playback speed is {playback_speed:.2f}x")
+        for change in tempo_changes:
+            if change[0] == storedIndex:
+                new_tempo = change[1]
+                playback_speed = new_tempo / origionalPlaybackSpeed
+                print(f"Tempo changed: New playback speed is {playback_speed:.2f}x")
 
 def playNextNote():
-    global isPlaying, storedIndex, playback_speed, elapsedTime, legitModeActive
+    global isPlaying, storedIndex, playback_speed, elapsedTime, legitModeActive, heldNotes
 
     adjustTempoForCurrentNote()
     
+    notes = infoTuple[2]
     total_duration = calculateTotalDuration(notes)
 
-    notes = infoTuple[2]
     if isPlaying and storedIndex < len(notes):
         noteInfo = notes[storedIndex]
         delay = floorToZero(noteInfo[0])
+        note_keys = noteInfo[1]
+        
         # Legit Mode
         if legitModeActive:
             delay_variation = random.uniform(0.90, 1.10)
             delay *= delay_variation
 
             if random.random() < 0.05:
-                if random.random() < 0.5 and len(noteInfo[1]) > 1:
-                    noteInfo[1] = noteInfo[1][1:]
+                if random.random() < 0.5 and len(note_keys) > 1:
+                    note_keys = note_keys[1:]
                 else:
-                    if storedIndex == 0 or notes[storedIndex-1][0] > 0.3:
+                    if storedIndex == 0 or notes[storedIndex - 1][0] > 0.3:
                         delay += random.uniform(0.1, 0.5)
 
         elapsedTime += delay
 
-        # Regular Mode
-        if noteInfo[1][0] == "~":
-            for n in noteInfo[1][1:]:
+        # Press or release keys based on the presence of "~"
+        if "~" in note_keys:
+            for n in note_keys.replace("~", ""):
                 releaseLetter(n)
+                if n in heldNotes:
+                    del heldNotes[n]
         else:
-            for n in noteInfo[1]:
+            for n in note_keys:
                 pressLetter(n)
+                heldNotes[n] = noteInfo[0]
 
-        if "~" not in noteInfo[1]:
+            # Schedule release of held notes
+            threading.Timer(noteInfo[0] / playback_speed, releaseHeldNotes, [note_keys]).start()
+
+        if "~" not in note_keys:
             elapsed_mins, elapsed_secs = divmod(elapsedTime, 60)
             total_mins, total_secs = divmod(total_duration, 60)
-            print(f"[{int(elapsed_mins)}m {int(elapsed_secs)}s/{int(total_mins)}m {int(total_secs)}s] {noteInfo[1]}")
+            print(f"[{int(elapsed_mins)}m {int(elapsed_secs)}s/{int(total_mins)}m {int(total_secs)}s] {note_keys}")
 
         storedIndex += 1
         if delay == 0:
             playNextNote()
         else:
-            threading.Timer(delay/playback_speed, playNextNote).start()
+            threading.Timer(delay / playback_speed, playNextNote).start()
     elif storedIndex >= len(notes):
         isPlaying = False
         storedIndex = 0
         elapsedTime = 0
 
+def releaseHeldNotes(note_keys):
+    global heldNotes
+    for n in note_keys:
+        if n in heldNotes:
+            releaseLetter(n)
+            if n in heldNotes:
+                del heldNotes[n]
+
 def rewind(KeyboardEvent):
-	global storedIndex
-	if storedIndex - 10 < 0:
-		storedIndex = 0
-		
-	else:
-		storedIndex -= 10
-	print("Rewound to %.2f" % storedIndex)
+    global storedIndex
+    if storedIndex - 10 < 0:
+        storedIndex = 0
+    else:
+        storedIndex -= 10
+    print("Rewound to %.2f" % storedIndex)
 
 def skip(KeyboardEvent):
-	global storedIndex
-	if storedIndex + 10 > len(infoTuple[2]):
-		isPlaying = False
-		storedIndex = 0
-	else:
-		storedIndex += 10
-	print("Skipped to %.2f" % storedIndex)
+    global storedIndex
+    if storedIndex + 10 > len(infoTuple[2]):
+        isPlaying = False
+        storedIndex = 0
+    else:
+        storedIndex += 10
+    print("Skipped to %.2f" % storedIndex)
 
 def onKeyPress(key):
     global isPlaying, storedIndex, playback_speed, legitModeActive
@@ -320,6 +333,6 @@ def main():
 
     with Listener(on_press=onKeyPress) as listener:
         listener.join()
-			
+            
 if __name__ == "__main__":
-	main()
+    main()
